@@ -1,0 +1,9 @@
+fr/lapetina/smartocr/api/DefaultDocumentParserTest.class
+fr/lapetina/smartocr/util/JsonSanitizerTest.class
+fr/lapetina/smartocr/DocumentParserIntegrationTest.class
+fr/lapetina/smartocr/TestImageGenerator.class
+fr/lapetina/smartocr/ollama/VisionOcrServiceTest.class
+fr/lapetina/smartocr/pipeline/ParsingPipelineTest$TestImageGeneratorTests.class
+fr/lapetina/smartocr/pipeline/ParsingPipelineTest.class
+fr/lapetina/smartocr/util/PromptTemplatesTest.class
+fr/lapetina/smartocr/ollama/StructuredExtractionServiceTest.class

@@ -1,0 +1,8 @@
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/DocumentParserIntegrationTest.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/TestImageGenerator.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/api/DefaultDocumentParserTest.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/ollama/StructuredExtractionServiceTest.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/ollama/VisionOcrServiceTest.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/pipeline/ParsingPipelineTest.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/util/JsonSanitizerTest.java
+/Users/david/IdeaProjects/text-ocr-mapping/local-document-parser/src/test/java/fr/lapetina/smartocr/util/PromptTemplatesTest.java
