@@ -107,13 +107,7 @@ JsonNode result = parser.parseText(text, schema);
 
 ## Configuration
 
-### Custom Ollama URL
-
-```java
-DocumentParser parser = DefaultDocumentParser.builder()
-    .ollamaBaseUrl("http://localhost:11434")
-    .build();
-```
+SmartOCR uses connection pooling with load balancing via [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer). This provides circuit breakers, health monitoring, and efficient connection management.
 
 ### Custom Models
 
@@ -124,31 +118,31 @@ DocumentParser parser = DefaultDocumentParser.builder()
     .build();
 ```
 
-### Pool Mode
-
-For production workloads, enable pool mode to get connection pooling, load balancing, circuit breakers, and health monitoring. This uses the [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer) library.
+### Custom Pool Configuration
 
 ```java
-// Enable pool mode with default configuration
+// Use custom pool configuration files
 DocumentParser parser = DefaultDocumentParser.builder()
-    .withPool()
+    .poolConfig("my-vision-pool.yaml", "my-text-pool.yaml")
     .build();
+```
 
-// Enable pool mode with custom configuration files
-DocumentParser parser = DefaultDocumentParser.builder()
-    .withPool("my-vision-pool.yaml", "my-text-pool.yaml")
-    .build();
+### Shared Pool Manager
 
-// Share a pool manager across multiple parsers
+Share a pool manager across multiple parsers for efficient resource usage:
+
+```java
 try (OllamaPoolManager poolManager = OllamaPoolManager.createDefault()) {
     DocumentParser parser = DefaultDocumentParser.builder()
-        .withPoolManager(poolManager)
+        .poolManager(poolManager)
         .build();
     // use parser...
 }
 ```
 
-Pool mode uses two separate pools:
+### Pool Architecture
+
+SmartOCR uses two separate connection pools:
 - **Vision Pool**: For OCR operations using `llama3.2-vision`
 - **Text Pool**: For structured extraction using `llama3.2`
 

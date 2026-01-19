@@ -35,13 +35,6 @@ public class ParsingPipeline implements ExtractionStrategy {
         this.extractionService = Objects.requireNonNull(extractionService, "extractionService must not be null");
     }
 
-    /**
-     * Creates a pipeline with default services.
-     */
-    public ParsingPipeline() {
-        this(new VisionOcrService(), new StructuredExtractionService());
-    }
-
     @Override
     public JsonNode extract(Optional<byte[]> image, Optional<String> text, String extractionSchemaJson) {
         Objects.requireNonNull(image, "image must not be null");

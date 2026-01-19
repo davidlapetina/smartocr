@@ -30,7 +30,7 @@
     </properties>
 
     <dependencies>
-        <!-- Ollama Load Balancer for pool management -->
+        <!-- Ollama Load Balancer for pool management (includes slf4j, snakeyaml, jackson transitively) -->
         <dependency>
             <groupId>io.github.ollama-pool</groupId>
             <artifactId>ollama-load-balancer</artifactId>

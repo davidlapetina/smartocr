@@ -262,24 +262,6 @@ class DocumentParserIntegrationTest {
         }
     }
 
-    @Test
-    @Order(8)
-    @DisplayName("Custom Ollama URL configuration works")
-    void builder_customUrl_works() {
-        DocumentParser customParser = DefaultDocumentParser.builder()
-                .ollamaBaseUrl(OLLAMA_URL)
-                .build();
-
-        String text = "Test document with name: John Doe";
-        String schema = """
-                {"type": "object", "properties": {"name": {"type": "string"}}}
-                """;
-
-        JsonNode result = customParser.parseText(text, schema);
-
-        assertNotNull(result);
-    }
-
     private static boolean isOllamaRunning() {
         try {
             HttpClient client = HttpClient.newBuilder()

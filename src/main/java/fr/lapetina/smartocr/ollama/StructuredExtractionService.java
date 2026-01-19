@@ -39,13 +39,6 @@ public class StructuredExtractionService {
     }
 
     /**
-     * Creates a StructuredExtractionService with a default Ollama client and model.
-     */
-    public StructuredExtractionService() {
-        this(new OllamaClient(), DEFAULT_MODEL);
-    }
-
-    /**
      * Extracts structured data from text according to the provided schema.
      *
      * @param text                 the text to extract from

@@ -1,7 +1,6 @@
 package fr.lapetina.smartocr.api;
 
 import fr.lapetina.smartocr.ollama.LlmClient;
-import fr.lapetina.smartocr.ollama.OllamaClient;
 import fr.lapetina.smartocr.ollama.OllamaPoolManager;
 import fr.lapetina.smartocr.ollama.StructuredExtractionService;
 import fr.lapetina.smartocr.ollama.VisionOcrService;
@@ -17,17 +16,23 @@ import java.util.Optional;
  * Default implementation of {@link DocumentParser} that delegates extraction
  * to a configured strategy.
  * <p>
+ * Uses connection pooling with load balancing via ollama-load-balancer.
+ * <p>
  * Usage:
  * <pre>{@code
- * // Simple usage with defaults (localhost:11434)
+ * // Simple usage with default pool configuration
  * DocumentParser parser = new DefaultDocumentParser();
  * JsonNode result = parser.parseImage(imageBytes, schemaJson);
  *
  * // Custom configuration
  * DocumentParser parser = DefaultDocumentParser.builder()
- *     .ollamaBaseUrl("http://192.168.1.100:11434")
  *     .visionModel("llava")
  *     .textModel("mistral")
+ *     .build();
+ *
+ * // With custom pool configuration files
+ * DocumentParser parser = DefaultDocumentParser.builder()
+ *     .poolConfig("my-vision-pool.yaml", "my-text-pool.yaml")
  *     .build();
  * }</pre>
  */
@@ -36,11 +41,11 @@ public class DefaultDocumentParser implements DocumentParser {
     private final ExtractionStrategy extractionStrategy;
 
     /**
-     * Creates a new parser with the default pipeline.
-     * Uses local Ollama instance at http://localhost:11434.
+     * Creates a new parser with the default pool configuration.
+     * Uses vision-pool-config.yaml and text-pool-config.yaml from the classpath.
      */
     public DefaultDocumentParser() {
-        this(new ParsingPipeline());
+        this(builder().build().extractionStrategy);
     }
 
     /**
@@ -104,29 +109,16 @@ public class DefaultDocumentParser implements DocumentParser {
 
     /**
      * Builder for creating configured DefaultDocumentParser instances.
+     * Uses connection pooling with load balancing via ollama-load-balancer.
      */
     public static class Builder {
-        private String ollamaBaseUrl = "http://localhost:11434";
         private String visionModel = "llama3.2-vision";
         private String textModel = "llama3.2";
-        private boolean usePool = false;
         private String visionPoolConfig = "vision-pool-config.yaml";
         private String textPoolConfig = "text-pool-config.yaml";
         private OllamaPoolManager poolManager;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the Ollama server base URL.
-         * This is ignored when pool mode is enabled.
-         *
-         * @param baseUrl the base URL (e.g., "http://192.168.1.100:11434")
-         * @return this builder
-         */
-        public Builder ollamaBaseUrl(String baseUrl) {
-            this.ollamaBaseUrl = Objects.requireNonNull(baseUrl, "baseUrl must not be null");
-            return this;
         }
 
         /**
@@ -152,25 +144,13 @@ public class DefaultDocumentParser implements DocumentParser {
         }
 
         /**
-         * Enables pool mode with default configuration files.
-         * Uses vision-pool-config.yaml and text-pool-config.yaml from the classpath.
-         *
-         * @return this builder
-         */
-        public Builder withPool() {
-            this.usePool = true;
-            return this;
-        }
-
-        /**
-         * Enables pool mode with custom configuration files.
+         * Sets custom pool configuration files.
          *
          * @param visionPoolConfig path to the vision pool configuration YAML
          * @param textPoolConfig   path to the text pool configuration YAML
          * @return this builder
          */
-        public Builder withPool(String visionPoolConfig, String textPoolConfig) {
-            this.usePool = true;
+        public Builder poolConfig(String visionPoolConfig, String textPoolConfig) {
             this.visionPoolConfig = Objects.requireNonNull(visionPoolConfig, "visionPoolConfig must not be null");
             this.textPoolConfig = Objects.requireNonNull(textPoolConfig, "textPoolConfig must not be null");
             return this;
@@ -183,9 +163,8 @@ public class DefaultDocumentParser implements DocumentParser {
          * @param poolManager the pool manager to use
          * @return this builder
          */
-        public Builder withPoolManager(OllamaPoolManager poolManager) {
+        public Builder poolManager(OllamaPoolManager poolManager) {
             this.poolManager = Objects.requireNonNull(poolManager, "poolManager must not be null");
-            this.usePool = true;
             return this;
         }
 
@@ -198,19 +177,13 @@ public class DefaultDocumentParser implements DocumentParser {
             LlmClient visionClient;
             LlmClient textClient;
 
-            if (usePool) {
-                if (poolManager != null) {
-                    visionClient = poolManager.getVisionClient();
-                    textClient = poolManager.getTextClient();
-                } else {
-                    OllamaPoolManager manager = OllamaPoolManager.create(visionPoolConfig, textPoolConfig);
-                    visionClient = manager.getVisionClient();
-                    textClient = manager.getTextClient();
-                }
+            if (poolManager != null) {
+                visionClient = poolManager.getVisionClient();
+                textClient = poolManager.getTextClient();
             } else {
-                OllamaClient client = new OllamaClient(ollamaBaseUrl);
-                visionClient = client;
-                textClient = client;
+                OllamaPoolManager manager = OllamaPoolManager.create(visionPoolConfig, textPoolConfig);
+                visionClient = manager.getVisionClient();
+                textClient = manager.getTextClient();
             }
 
             VisionOcrService ocrService = new VisionOcrService(visionClient, visionModel);

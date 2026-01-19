@@ -44,13 +44,6 @@ public class VisionOcrService {
     }
 
     /**
-     * Creates a VisionOcrService with a default Ollama client and model.
-     */
-    public VisionOcrService() {
-        this(new OllamaClient(), DEFAULT_MODEL);
-    }
-
-    /**
      * Extracts plain text from an image using OCR.
      *
      * @param image the image data

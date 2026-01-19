@@ -122,29 +122,6 @@ class DefaultDocumentParserTest {
         assertTrue(exception.getMessage().contains("Extraction failed"));
     }
 
-    @Test
-    void builder_defaultConfiguration_createsParser() {
-        DefaultDocumentParser parser = DefaultDocumentParser.builder().build();
-
-        assertNotNull(parser);
-    }
-
-    @Test
-    void builder_customUrl_createsParser() {
-        DefaultDocumentParser parser = DefaultDocumentParser.builder()
-                .ollamaBaseUrl("http://custom:11434")
-                .build();
-
-        assertNotNull(parser);
-    }
-
-    @Test
-    void builder_customModels_createsParser() {
-        DefaultDocumentParser parser = DefaultDocumentParser.builder()
-                .visionModel("llava")
-                .textModel("mistral")
-                .build();
-
-        assertNotNull(parser);
-    }
+    // Note: Builder tests that create actual pools are in integration tests
+    // since they require Ollama to be running
 }

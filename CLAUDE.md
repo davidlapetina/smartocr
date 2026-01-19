@@ -19,21 +19,30 @@ mvn test -Dtest=*IntegrationTest  # Run integration tests (requires Ollama)
 
 ## Architecture
 
-Two-stage pipeline architecture:
+Two-stage pipeline architecture with connection pooling:
 
 ```
 Image → VisionOcrService → Plain Text → StructuredExtractionService → JsonNode
-                                ↑
-                          or direct text input
+              ↓                                    ↓
+        Vision Pool                           Text Pool
+     (llama3.2-vision)                       (llama3.2)
+              ↓                                    ↓
+        ollama-load-balancer (circuit breakers, health checks, load balancing)
+              ↓                                    ↓
+                          Ollama Server(s)
 ```
 
 ### Key Packages
 
 - **api/** - Public interface (`DocumentParser`) and implementation (`DefaultDocumentParser`) with builder pattern
 - **pipeline/** - `ParsingPipeline` orchestrates the two-stage extraction process using `ExtractionStrategy` interface
-- **ollama/** - HTTP client for Ollama API (`OllamaClient`), `VisionOcrService` for OCR, `StructuredExtractionService` for JSON extraction
+- **ollama/** - Pool management (`OllamaPoolManager`, `PooledLlmClient`), `VisionOcrService` for OCR, `StructuredExtractionService` for JSON extraction
 - **schema/** - `ExtractionSchema` opaque wrapper treating schemas as raw LLM instructions
 - **util/** - `PromptTemplates` for centralized LLM prompts, `JsonSanitizer` for robust JSON extraction from LLM responses
+
+### Dependencies
+
+- **ollama-load-balancer** (1.1.0) - High-performance connection pooling and load balancing for Ollama with LMAX Disruptor
 
 ### Design Patterns
 
