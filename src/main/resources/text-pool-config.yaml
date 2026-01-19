@@ -1,0 +1,50 @@
+# Text Pool Configuration for llama3.2 model
+server:
+  port: 8082
+  host: 0.0.0.0
+  backlog: 10
+
+nodes:
+  - id: text-node-1
+    url: http://localhost:11434
+    models:
+      - llama3.2
+    maxConcurrentRequests: 5
+    weight: 1
+    enabled: true
+
+strategy:
+  type: least-in-flight
+  adaptive: false
+
+disruptor:
+  ringBufferSize: 128
+  waitStrategy: blocking
+  maxGlobalInFlight: 20
+
+timeouts:
+  requestTimeoutMs: 120000
+  connectTimeoutMs: 10000
+  healthCheckTimeoutMs: 5000
+
+retry:
+  maxRetries: 2
+  initialBackoffMs: 100
+  maxBackoffMs: 5000
+  backoffMultiplier: 2.0
+
+healthCheck:
+  intervalMs: 60000
+  degradedThreshold: 3
+  downThreshold: 6
+  circuitBreakerFailureThreshold: 5
+  circuitBreakerRecoveryMs: 30000
+
+validation:
+  maxPromptLength: 100000
+  allowedModels:
+    - llama3.2
+
+metrics:
+  enabled: true
+  prefix: smartocr_text

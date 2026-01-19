@@ -1,6 +1,8 @@
 package fr.lapetina.smartocr.api;
 
+import fr.lapetina.smartocr.ollama.LlmClient;
 import fr.lapetina.smartocr.ollama.OllamaClient;
+import fr.lapetina.smartocr.ollama.OllamaPoolManager;
 import fr.lapetina.smartocr.ollama.StructuredExtractionService;
 import fr.lapetina.smartocr.ollama.VisionOcrService;
 import fr.lapetina.smartocr.pipeline.ExtractionStrategy;
@@ -107,12 +109,17 @@ public class DefaultDocumentParser implements DocumentParser {
         private String ollamaBaseUrl = "http://localhost:11434";
         private String visionModel = "llama3.2-vision";
         private String textModel = "llama3.2";
+        private boolean usePool = false;
+        private String visionPoolConfig = "vision-pool-config.yaml";
+        private String textPoolConfig = "text-pool-config.yaml";
+        private OllamaPoolManager poolManager;
 
         private Builder() {
         }
 
         /**
          * Sets the Ollama server base URL.
+         * This is ignored when pool mode is enabled.
          *
          * @param baseUrl the base URL (e.g., "http://192.168.1.100:11434")
          * @return this builder
@@ -145,14 +152,69 @@ public class DefaultDocumentParser implements DocumentParser {
         }
 
         /**
+         * Enables pool mode with default configuration files.
+         * Uses vision-pool-config.yaml and text-pool-config.yaml from the classpath.
+         *
+         * @return this builder
+         */
+        public Builder withPool() {
+            this.usePool = true;
+            return this;
+        }
+
+        /**
+         * Enables pool mode with custom configuration files.
+         *
+         * @param visionPoolConfig path to the vision pool configuration YAML
+         * @param textPoolConfig   path to the text pool configuration YAML
+         * @return this builder
+         */
+        public Builder withPool(String visionPoolConfig, String textPoolConfig) {
+            this.usePool = true;
+            this.visionPoolConfig = Objects.requireNonNull(visionPoolConfig, "visionPoolConfig must not be null");
+            this.textPoolConfig = Objects.requireNonNull(textPoolConfig, "textPoolConfig must not be null");
+            return this;
+        }
+
+        /**
+         * Uses an existing pool manager.
+         * The pool manager will not be closed when the parser is no longer needed.
+         *
+         * @param poolManager the pool manager to use
+         * @return this builder
+         */
+        public Builder withPoolManager(OllamaPoolManager poolManager) {
+            this.poolManager = Objects.requireNonNull(poolManager, "poolManager must not be null");
+            this.usePool = true;
+            return this;
+        }
+
+        /**
          * Builds the configured parser.
          *
          * @return a new DefaultDocumentParser instance
          */
         public DefaultDocumentParser build() {
-            OllamaClient client = new OllamaClient(ollamaBaseUrl);
-            VisionOcrService ocrService = new VisionOcrService(client, visionModel);
-            StructuredExtractionService extractionService = new StructuredExtractionService(client, textModel);
+            LlmClient visionClient;
+            LlmClient textClient;
+
+            if (usePool) {
+                if (poolManager != null) {
+                    visionClient = poolManager.getVisionClient();
+                    textClient = poolManager.getTextClient();
+                } else {
+                    OllamaPoolManager manager = OllamaPoolManager.create(visionPoolConfig, textPoolConfig);
+                    visionClient = manager.getVisionClient();
+                    textClient = manager.getTextClient();
+                }
+            } else {
+                OllamaClient client = new OllamaClient(ollamaBaseUrl);
+                visionClient = client;
+                textClient = client;
+            }
+
+            VisionOcrService ocrService = new VisionOcrService(visionClient, visionModel);
+            StructuredExtractionService extractionService = new StructuredExtractionService(textClient, textModel);
             ParsingPipeline pipeline = new ParsingPipeline(ocrService, extractionService);
             return new DefaultDocumentParser(pipeline);
         }

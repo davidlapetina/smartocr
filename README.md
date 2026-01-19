@@ -10,6 +10,7 @@ A Java library for extracting structured data from documents using local LLMs vi
 - **Entity-Agnostic**: Works with any document type - invoices, receipts, forms, contracts, etc.
 - **Flexible Pipeline**: Process images, raw text, or both
 - **Zero Configuration**: Sensible defaults that work out of the box
+- **Pool Mode**: Optional connection pooling with load balancing via [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer)
 
 ## Requirements
 
@@ -123,6 +124,36 @@ DocumentParser parser = DefaultDocumentParser.builder()
     .build();
 ```
 
+### Pool Mode
+
+For production workloads, enable pool mode to get connection pooling, load balancing, circuit breakers, and health monitoring. This uses the [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer) library.
+
+```java
+// Enable pool mode with default configuration
+DocumentParser parser = DefaultDocumentParser.builder()
+    .withPool()
+    .build();
+
+// Enable pool mode with custom configuration files
+DocumentParser parser = DefaultDocumentParser.builder()
+    .withPool("my-vision-pool.yaml", "my-text-pool.yaml")
+    .build();
+
+// Share a pool manager across multiple parsers
+try (OllamaPoolManager poolManager = OllamaPoolManager.createDefault()) {
+    DocumentParser parser = DefaultDocumentParser.builder()
+        .withPoolManager(poolManager)
+        .build();
+    // use parser...
+}
+```
+
+Pool mode uses two separate pools:
+- **Vision Pool**: For OCR operations using `llama3.2-vision`
+- **Text Pool**: For structured extraction using `llama3.2`
+
+Configuration files are YAML-based. See `src/main/resources/vision-pool-config.yaml` and `text-pool-config.yaml` for examples.
+
 ## Schema Definition
 
 The extraction schema follows JSON Schema format. Key points:
@@ -216,7 +247,15 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## Dependencies
+
+SmartOCR uses the following key dependencies:
+
+- [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer) (1.1.0) - High-performance connection pooling and load balancing for Ollama
+- [Jackson](https://github.com/FasterXML/jackson) - JSON processing
+
 ## Acknowledgments
 
 - [Ollama](https://ollama.ai) for making local LLMs accessible
 - [Jackson](https://github.com/FasterXML/jackson) for JSON processing
+- [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer) for connection pooling
