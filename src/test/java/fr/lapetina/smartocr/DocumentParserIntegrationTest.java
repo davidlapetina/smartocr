@@ -262,6 +262,158 @@ class DocumentParserIntegrationTest {
         }
     }
 
+    @Test
+    @Order(8)
+    @DisplayName("Parse document with multiple items returns top-level array")
+    void parseText_multipleItems_returnsArray() {
+        String text = """
+                CONTACT LIST
+
+                Name: John Smith
+                Email: john@example.com
+                Phone: 555-1234
+
+                Name: Jane Doe
+                Email: jane@example.com
+                Phone: 555-5678
+
+                Name: Bob Wilson
+                Email: bob@example.com
+                Phone: 555-9012
+                """;
+
+        String schema = """
+                {
+                    "type": "array",
+                    "description": "List of contacts extracted from the document",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string", "description": "Contact name"},
+                            "email": {"type": "string", "description": "Email address"},
+                            "phone": {"type": "string", "description": "Phone number"}
+                        }
+                    }
+                }
+                """;
+
+        JsonNode result = parser.parseText(text, schema);
+
+        assertNotNull(result);
+        assertTrue(result.isArray(), "Result should be a JSON array");
+        assertTrue(result.size() >= 2, "Should extract at least 2 contacts");
+        System.out.println("Extracted array: " + result.toPrettyString());
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("Parse document with nested arrays extracts correctly")
+    void parseText_nestedArrays_extractsCorrectly() {
+        String text = """
+                COMPANY DIRECTORY
+
+                Department: Engineering
+                Team Lead: Alice Johnson
+                Members: Bob, Charlie, David
+                Projects: Alpha, Beta
+
+                Department: Marketing
+                Team Lead: Eve Brown
+                Members: Frank, Grace
+                Projects: Campaign X, Campaign Y, Campaign Z
+                """;
+
+        String schema = """
+                {
+                    "type": "array",
+                    "description": "List of departments",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "department": {"type": "string", "description": "Department name"},
+                            "teamLead": {"type": "string", "description": "Team leader name"},
+                            "members": {
+                                "type": "array",
+                                "description": "List of team member names",
+                                "items": {"type": "string"}
+                            },
+                            "projects": {
+                                "type": "array",
+                                "description": "List of project names",
+                                "items": {"type": "string"}
+                            }
+                        }
+                    }
+                }
+                """;
+
+        JsonNode result = parser.parseText(text, schema);
+
+        assertNotNull(result);
+        assertTrue(result.isArray(), "Result should be a JSON array");
+        assertTrue(result.size() >= 1, "Should extract at least 1 department");
+
+        // Check that nested arrays exist
+        JsonNode firstDept = result.get(0);
+        assertNotNull(firstDept);
+        assertTrue(firstDept.has("members") || firstDept.has("projects"),
+                "Department should have members or projects array");
+
+        if (firstDept.has("members") && !firstDept.get("members").isNull()) {
+            assertTrue(firstDept.get("members").isArray(), "Members should be an array");
+        }
+
+        System.out.println("Extracted nested arrays: " + result.toPrettyString());
+    }
+
+    @Test
+    @Order(10)
+    @DisplayName("Parse invoice image with line items array")
+    void parseImage_invoiceWithLineItems_extractsArray() {
+        byte[] invoiceImage = TestImageGenerator.createInvoiceWithLineItems(
+                "INV-2024-0099",
+                "2024-03-20",
+                new String[]{
+                        "Widget A     x2     $10.00     $20.00",
+                        "Gadget B     x1     $35.00     $35.00",
+                        "Service C    x3     $15.00     $45.00"
+                },
+                "$100.00"
+        );
+
+        String schema = """
+                {
+                    "type": "object",
+                    "properties": {
+                        "invoiceNumber": {"type": "string"},
+                        "date": {"type": "string"},
+                        "lineItems": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "description": {"type": "string"},
+                                    "quantity": {"type": "integer"},
+                                    "unitPrice": {"type": "number"},
+                                    "total": {"type": "number"}
+                                }
+                            }
+                        },
+                        "grandTotal": {"type": "number"}
+                    }
+                }
+                """;
+
+        JsonNode result = parser.parseImage(invoiceImage, schema);
+
+        assertNotNull(result);
+        System.out.println("Extracted invoice with line items: " + result.toPrettyString());
+
+        if (result.has("lineItems") && !result.get("lineItems").isNull()) {
+            assertTrue(result.get("lineItems").isArray(), "lineItems should be an array");
+        }
+    }
+
     private static boolean isOllamaRunning() {
         try {
             HttpClient client = HttpClient.newBuilder()

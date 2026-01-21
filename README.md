@@ -7,6 +7,7 @@ A Java library for extracting structured data from documents using local LLMs vi
 - **Local Processing**: All processing happens locally using Ollama - no data leaves your machine
 - **OCR from Images**: Extract text from images using vision-capable models (e.g., LLaVA, llama3.2-vision)
 - **Structured Extraction**: Extract structured JSON data from text according to your custom schema
+- **Array Support**: Extract arrays and nested arrays for complete document scanning (e.g., line items, contact lists)
 - **Entity-Agnostic**: Works with any document type - invoices, receipts, forms, contracts, etc.
 - **Flexible Pipeline**: Process images, raw text, or both
 - **Zero Configuration**: Sensible defaults that work out of the box
@@ -27,14 +28,14 @@ A Java library for extracting structured data from documents using local LLMs vi
 <dependency>
     <groupId>fr.lapetina.smartocr</groupId>
     <artifactId>smartocr</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'fr.lapetina.smartocr:smartocr:1.0.0-SNAPSHOT'
+implementation 'fr.lapetina.smartocr:smartocr:1.2.0'
 ```
 
 ## Quick Start
@@ -105,6 +106,46 @@ String schema = """
 JsonNode result = parser.parseText(text, schema);
 ```
 
+### 4. Extract Arrays from Documents
+
+For complete document scanning, you can extract top-level arrays or nested arrays:
+
+```java
+String document = """
+    CONTACT LIST
+
+    Name: John Smith
+    Email: john@example.com
+    Phone: 555-1234
+
+    Name: Jane Doe
+    Email: jane@example.com
+    Phone: 555-5678
+    """;
+
+String schema = """
+    {
+        "type": "array",
+        "description": "List of contacts",
+        "items": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string"},
+                "phone": {"type": "string"}
+            }
+        }
+    }
+    """;
+
+JsonNode contacts = parser.parseText(document, schema);
+// Returns: [{"name": "John Smith", ...}, {"name": "Jane Doe", ...}]
+
+for (JsonNode contact : contacts) {
+    System.out.println(contact.get("name").asText());
+}
+```
+
 ## Configuration
 
 SmartOCR uses connection pooling with load balancing via [ollama-load-balancer](https://github.com/ollama-pool/ollama-load-balancer). This provides circuit breakers, health monitoring, and efficient connection management.
@@ -154,6 +195,8 @@ The extraction schema follows JSON Schema format. Key points:
 
 - Use `type` to specify the data type (`string`, `number`, `integer`, `boolean`, `array`, `object`)
 - Use `description` to guide the LLM on what to extract
+- Top-level arrays are supported for extracting lists of items from documents
+- Nested arrays (one level deep) are supported for complex structures
 - Dates are automatically normalized to ISO-8601 format (YYYY-MM-DD)
 - Numbers are extracted without currency symbols
 - Missing values are returned as `null`

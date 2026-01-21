@@ -114,6 +114,62 @@ class JsonSanitizerTest {
     }
 
     @Test
+    void sanitize_nestedArrays_extractsCorrectly() throws JsonSanitizationException {
+        String json = """
+                [
+                    {
+                        "department": "Engineering",
+                        "members": ["Alice", "Bob", "Charlie"],
+                        "projects": [
+                            {"name": "Alpha", "status": "active"},
+                            {"name": "Beta", "status": "completed"}
+                        ]
+                    },
+                    {
+                        "department": "Marketing",
+                        "members": ["David", "Eve"],
+                        "projects": [
+                            {"name": "Campaign X", "status": "active"}
+                        ]
+                    }
+                ]
+                """;
+
+        JsonNode result = JsonSanitizer.sanitize(json);
+
+        assertTrue(result.isArray());
+        assertEquals(2, result.size());
+
+        // Verify nested string array
+        JsonNode firstDept = result.get(0);
+        assertTrue(firstDept.get("members").isArray());
+        assertEquals(3, firstDept.get("members").size());
+        assertEquals("Alice", firstDept.get("members").get(0).asText());
+
+        // Verify nested object array
+        assertTrue(firstDept.get("projects").isArray());
+        assertEquals(2, firstDept.get("projects").size());
+        assertEquals("Alpha", firstDept.get("projects").get(0).get("name").asText());
+    }
+
+    @Test
+    void sanitize_arrayWithMarkdown_extractsCorrectly() throws JsonSanitizationException {
+        String response = """
+                Here is the data you requested:
+                ```json
+                [{"name": "Item 1"}, {"name": "Item 2"}]
+                ```
+                Hope this helps!
+                """;
+
+        JsonNode result = JsonSanitizer.sanitize(response);
+
+        assertTrue(result.isArray());
+        assertEquals(2, result.size());
+        assertEquals("Item 1", result.get(0).get("name").asText());
+    }
+
+    @Test
     void sanitize_nullValuesInJson_preservesNull() throws JsonSanitizationException {
         String json = "{\"name\": null, \"value\": 123}";
 

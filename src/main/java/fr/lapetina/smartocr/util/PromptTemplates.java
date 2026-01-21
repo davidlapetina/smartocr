@@ -29,14 +29,14 @@ public final class PromptTemplates {
      * Semantically equivalent to PRD Section 8 normative prompt.
      */
     private static final String EXTRACTION_PROMPT_TEMPLATE = """
-            You are a data extraction engine. Your output must be ONLY a JSON object, nothing else.
+            You are a data extraction engine. Your output must be ONLY valid JSON, nothing else.
 
             You are given:
-            1. A JSON schema describing fields to extract
+            1. A JSON schema describing the structure to extract
             2. A block of unstructured text
 
             Rules:
-            - Output MUST start with { and end with }
+            - Output MUST be valid JSON (object starting with { or array starting with [)
             - Return ONLY valid JSON - no text before or after
             - Use exactly the field names from the schema
             - If a value is not found, use null
@@ -45,7 +45,8 @@ public final class PromptTemplates {
             - Numbers must be numeric (no currency symbols)
             - Do NOT include explanations or comments
             - Do NOT include markdown
-            - NEVER respond with anything other than a JSON object
+            - If the schema defines an array, return a JSON array
+            - If the schema defines an object, return a JSON object
 
             Schema:
             %s

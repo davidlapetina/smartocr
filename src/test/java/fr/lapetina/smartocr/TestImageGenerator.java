@@ -116,6 +116,70 @@ public final class TestImageGenerator {
     }
 
     /**
+     * Creates an invoice image with line items.
+     *
+     * @param invoiceNumber the invoice number
+     * @param date          the invoice date
+     * @param lineItems     array of line item descriptions (e.g., "Widget A     x2     $10.00     $20.00")
+     * @param grandTotal    the grand total
+     * @return PNG image as byte array
+     */
+    public static byte[] createInvoiceWithLineItems(String invoiceNumber, String date, String[] lineItems, String grandTotal) {
+        int width = 550;
+        int height = 200 + (lineItems.length * 30) + 100;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = image.createGraphics();
+
+        // White background
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, width, height);
+
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Header
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 24));
+        g2d.drawString("INVOICE", 230, 40);
+
+        // Invoice details
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        g2d.drawString("Invoice Number: " + invoiceNumber, 30, 80);
+        g2d.drawString("Date: " + date, 30, 100);
+
+        // Column headers
+        int y = 140;
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 12));
+        g2d.drawString("Description", 30, y);
+        g2d.drawString("Qty", 250, y);
+        g2d.drawString("Unit Price", 320, y);
+        g2d.drawString("Total", 450, y);
+
+        // Separator
+        y += 10;
+        g2d.drawLine(30, y, width - 30, y);
+        y += 25;
+
+        // Line items
+        g2d.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        for (String item : lineItems) {
+            g2d.drawString(item, 30, y);
+            y += 30;
+        }
+
+        // Separator and total
+        g2d.drawLine(30, y, width - 30, y);
+        y += 30;
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 16));
+        g2d.drawString("Grand Total: " + grandTotal, 350, y);
+
+        g2d.dispose();
+
+        return toPngBytes(image);
+    }
+
+    /**
      * Creates a receipt-style image.
      *
      * @param storeName store name
